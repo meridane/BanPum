@@ -32,5 +32,24 @@ export default async function AdminPage() {
 
   if (profile.must_change_password) redirect("/admin/change-password");
 
-  return <AdminDashboard fullName={profile.full_name || user.email || "Utilisateur"} role={profile.role} />;
+  const [{ count: receivingCount }, { count: stockCount }, { count: ordersCount }, { count: returnsCount }] =
+    await Promise.all([
+      supabase.from("receiving_batches").select("*", { count: "exact", head: true }),
+      supabase.from("physical_products").select("*", { count: "exact", head: true }).in("status", ["in_stock", "published"]),
+      supabase.from("orders").select("*", { count: "exact", head: true }).in("status", ["paid", "preparing", "packed"]),
+      supabase.from("return_requests").select("*", { count: "exact", head: true }).in("status", ["pending", "approved", "in_progress"]),
+    ]);
+
+  return (
+    <AdminDashboard
+      fullName={profile.full_name || user.email || "Utilisateur"}
+      role={profile.role}
+      counts={{
+        reception: receivingCount ?? 0,
+        products: stockCount ?? 0,
+        orders: ordersCount ?? 0,
+        returns: returnsCount ?? 0,
+      }}
+    />
+  );
 }
