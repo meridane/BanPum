@@ -8,7 +8,7 @@ BanPum ecommerce operations platform.
 - TypeScript
 - Tailwind CSS
 - Supabase SSR
-- Shopify integration (to be connected)
+- Shopify integration (to be connected later)
 
 ## Development
 
@@ -26,3 +26,7 @@ Shopify = customer-facing commerce and checkout.
 Supabase + BanPum Admin = physical inventory, receiving, QR locations, operations, returns, commissions and audit.
 
 Shopify will be connected after the store account is ready.
+
+## Deployment
+
+This repository is connected to the BanPum Vercel project.
