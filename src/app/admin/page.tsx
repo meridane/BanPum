@@ -12,7 +12,7 @@ export default async function AdminPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, status")
+    .select("full_name, role, status, must_change_password")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -29,6 +29,8 @@ export default async function AdminPage() {
       </main>
     );
   }
+
+  if (profile.must_change_password) redirect("/admin/change-password");
 
   return <AdminDashboard fullName={profile.full_name || user.email || "Utilisateur"} role={profile.role} />;
 }
