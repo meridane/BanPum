@@ -70,10 +70,10 @@ export default function AdminDashboard({ fullName, role, counts }: Props) {
             <h2 className="mt-1 text-xl font-bold">Nouvel arrivage</h2>
             <p className="mt-2 text-sm text-white/80">Créer un lot de réception et commencer l’identification des produits.</p>
           </Link>
-          <Link href="/admin/stock/locations" className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50">
+          <Link href="/admin/stock/scanner" className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50">
             <p className="text-sm font-medium text-neutral-500">Stock physique</p>
             <h2 className="mt-1 text-xl font-bold text-neutral-900">Réception → QR → Stock</h2>
-            <p className="mt-2 text-sm text-neutral-500">Créer les zones, racks, étagères et places avec QR pour ranger chaque produit.</p>
+            <p className="mt-2 text-sm text-neutral-500">Scanner produit + emplacement pour ranger physiquement chaque produit.</p>
           </Link>
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
             <p className="text-sm font-medium text-neutral-500">Système</p>
