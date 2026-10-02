@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 
 type Product = { id:string; internal_ref:string; qr_code:string; name:string|null; brand:string|null; model:string|null; category:string|null; description:string|null; condition_notes:string|null; status:string; official_price:number|null; };
-type Check = { id:string; general_condition:string|null; functional:boolean|null; packaging:string|null; accessories:string|null; anomalies:string|null; observations:string|null; completed_at:string|null; };
+type Check = { id:string; general_condition:string|null; functional:boolean|null; packaging:string|null; accessories:string|null; anomalies:string|null; observations:string|null; completed_at:string|null; };\ntype Location = { id:string; location_code:string; name:string; level_type:string; status:string };
 
 export default function ProductDetailPage() {
   const params=useParams<{id:string}>();
@@ -19,7 +19,7 @@ export default function ProductDetailPage() {
   const [accessories,setAccessories]=useState("");
   const [anomalies,setAnomalies]=useState("");
   const [observations,setObservations]=useState("");
-  const [photos,setPhotos]=useState<{id:string;storage_path:string;photo_type:string;is_main:boolean}[]>([]);
+  const [photos,setPhotos]=useState<{id:string;storage_path:string;photo_type:string;is_main:boolean}[]>([]);\n  const [locations,setLocations]=useState<Location[]>([]);\n  const [locationId,setLocationId]=useState("");
   const [saving,setSaving]=useState(false);
   const [message,setMessage]=useState("");
   const [error,setError]=useState("");
@@ -29,7 +29,7 @@ export default function ProductDetailPage() {
     setProduct(p as Product);
     const {data:c}=await supabase.from("product_checks").select("id,general_condition,functional,packaging,accessories,anomalies,observations,completed_at").eq("product_id",params.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
     if(c){const x=c as Check;setCheck(x);setCondition(x.general_condition||"Bon état");setFunctional(x.functional===false?"no":x.functional===true?"yes":"na");setPackaging(x.packaging||"");setAccessories(x.accessories||"");setAnomalies(x.anomalies||"");setObservations(x.observations||"");}
-    const {data:ph}=await supabase.from("product_photos").select("id,storage_path,photo_type,is_main").eq("product_id",params.id).order("sort_order");
+    const {data:locs}=await supabase.from("locations").select("id,location_code,name,level_type,status").neq("status","disabled").order("location_code");\n    setLocations((locs??[]) as Location[]);\n    setLocationId((p as Product)?.id ? "" : "");\n    const {data:ph}=await supabase.from("product_photos").select("id,storage_path,photo_type,is_main").eq("product_id",params.id).order("sort_order");
     setPhotos((ph??[]) as typeof photos);
   }
 
@@ -61,6 +61,15 @@ export default function ProductDetailPage() {
     setMessage("Photo enregistrée.");load();
   }
 
+  async function assignLocation() {
+    if (!locationId) { setError("Sélectionne un emplacement."); return; }
+    setError(""); setMessage("");
+    const { error: e } = await supabase.rpc("assign_product_location", { p_product_id: params.id, p_location_id: locationId });
+    if (e) { setError(e.message); return; }
+    setMessage("Emplacement enregistré. Produit ajouté au stock.");
+    await load();
+  }
+
   if(!product) return <main className="min-h-screen bg-[#f7f7f5] p-8"><p>Chargement...</p></main>;
 
   return <main className="min-h-screen bg-[#f7f7f5]">
@@ -84,7 +93,14 @@ export default function ProductDetailPage() {
           <button onClick={saveCheck} disabled={saving} className="mt-5 w-full rounded-xl bg-[#ff5722] px-4 py-3 font-semibold text-white disabled:opacity-60">{saving?"Enregistrement...":"Valider le contrôle"}</button>
         </section>
         <aside className="rounded-3xl bg-neutral-900 p-6 text-white">
-          <p className="text-sm font-medium text-neutral-400">PHOTOS</p>
+          <p className="text-sm font-medium text-neutral-400">EMPLACEMENT</p>
+          <select value={locationId} onChange={e=>setLocationId(e.target.value)} className="mt-3 w-full rounded-xl bg-white px-3 py-3 text-sm text-neutral-900">
+            <option value="">Choisir un emplacement</option>
+            {locations.map(l=><option key={l.id} value={l.id}>{l.location_code} — {l.name}</option>)}
+          </select>
+          <button onClick={assignLocation} className="mt-3 w-full rounded-xl bg-[#ff5722] px-4 py-3 text-sm font-semibold text-white">Enregistrer l'emplacement</button>
+
+          <p className="mt-7 text-sm font-medium text-neutral-400">PHOTOS</p>
           <label className="mt-4 block cursor-pointer rounded-xl border border-dashed border-neutral-700 p-5 text-center hover:bg-neutral-800"><span className="text-sm font-semibold">+ Ajouter une photo</span><input type="file" accept="image/*" capture="environment" className="hidden" onChange={uploadPhoto}/></label>
           <div className="mt-5 space-y-3">{photos.length===0?<p className="text-sm text-neutral-500">Aucune photo.</p>:photos.map(ph=><div key={ph.id} className="rounded-xl bg-white/5 p-3"><p className="text-xs text-neutral-300">{ph.photo_type}{ph.is_main?" · principale":""}</p><p className="mt-1 break-all text-[11px] text-neutral-500">{ph.storage_path}</p></div>)}</div>
           <div className="mt-6 border-t border-white/10 pt-5"><p className="text-xs text-neutral-500">QR</p><p className="mt-1 break-all text-xs">{product.qr_code}</p><p className="mt-5 text-xs text-neutral-500">Statut</p><p className="mt-1 font-semibold">{product.status}</p></div>
