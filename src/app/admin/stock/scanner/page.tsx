@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BrowserMultiFormatReader } from "@zxing/browser";
+import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
 import { createClient } from "@/lib/supabase/browser";
 
 type Product = { id:string; internal_ref:string; name:string|null; qr_code:string; status:string; location_id:string|null };
@@ -12,6 +12,7 @@ export default function ScannerPage() {
   const supabase = createClient();
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const controlsRef = useRef<IScannerControls | null>(null);
   const [cameraOn,setCameraOn]=useState(false);
   const [mode,setMode]=useState<"product"|"location">("product");
   const [manual,setManual]=useState("");
@@ -22,7 +23,8 @@ export default function ScannerPage() {
   const [saving,setSaving]=useState(false);
 
   function stopCamera(){
-    try { readerRef.current?.reset(); } catch {}
+    try { controlsRef.current?.stop(); } catch {}
+    controlsRef.current=null;
     readerRef.current=null;
     setCameraOn(false);
   }
@@ -61,11 +63,12 @@ export default function ScannerPage() {
       setCameraOn(true);
       await new Promise(r=>setTimeout(r,100));
       if(!videoRef.current) throw new Error("Caméra indisponible");
-      await reader.decodeFromConstraints(
+      const controls = await reader.decodeFromConstraints(
         {video:{facingMode:{ideal:"environment"}}},
         videoRef.current,
-        (result)=>{ if(result) { stopCamera(); handleCode(result.getText()); } }
+        (result)=>{ if(result) { stopCamera(); void handleCode(result.getText()); } }
       );
+      controlsRef.current = controls;
     }catch(e){ setCameraOn(false); setError("Impossible d'accéder à la caméra. Autorise la caméra dans le navigateur ou utilise la saisie manuelle."); }
   }
 
