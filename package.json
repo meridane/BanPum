@@ -15,7 +15,8 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "qrcode": "^1.5.4",
-    "@zxing/browser": "^0.1.5"
+    "@zxing/browser": "^0.1.5",
+    "html5-qrcode": "^2.3.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",
