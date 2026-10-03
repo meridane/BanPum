@@ -54,11 +54,12 @@ async function getShopifyAccessToken(): Promise<string> {
       );
     }
 
-    cachedAccessToken = json.access_token;
+    const accessToken: string = json.access_token;
+    cachedAccessToken = accessToken;
     cachedTokenExpiresAt =
       Date.now() + Number(json.expires_in || 86399) * 1000;
 
-    return cachedAccessToken;
+    return accessToken;
   })();
 
   try {
