@@ -25,6 +25,7 @@ export default function PublicationPreviewPage() {
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
   const [message,setMessage]=useState("");
+  const [shopifyPublishing,setShopifyPublishing]=useState(false);
 
   async function load(){
     setLoading(true); setError("");
@@ -52,6 +53,19 @@ export default function PublicationPreviewPage() {
 
   const ready=!!product && product.status==="ready_for_publication" && product.official_price!=null &&
     product.price_status==="confirmed" && !!product.name && !!product.category && !!product.description && !!product.location_id;
+
+  async function publishToShopify(){
+    if(!product || !product.publication_approved_at || !ready || !["owner","main_admin"].includes(role)) return;
+    setShopifyPublishing(true); setError(""); setMessage("");
+    try {
+      const res=await fetch(`/api/admin/products/${product.id}/shopify/publish`,{method:"POST"});
+      const data=await res.json();
+      if(!res.ok) throw new Error(data.error||"Erreur de synchronisation Shopify.");
+      setMessage(`✓ Produit publié sur Shopify. ID: ${data.shopifyProductId}`);
+      await load();
+    } catch(e){ setError(e instanceof Error?e.message:"Erreur Shopify."); }
+    finally { setShopifyPublishing(false); }
+  }
 
   async function approve(){
     if(!product || !["owner","main_admin"].includes(role) || !ready)return;
@@ -96,7 +110,7 @@ export default function PublicationPreviewPage() {
           <div className="mt-5 rounded-2xl bg-neutral-50 p-4"><p className="text-xs text-neutral-500">Prix</p><p className="text-2xl font-bold">{product.official_price?.toLocaleString("ko-KR")} ₩</p></div>
           <div className="mt-5 space-y-4"><div><p className="text-xs font-semibold text-neutral-500">Description</p><p className="mt-1 whitespace-pre-wrap text-sm">{product.description||"—"}</p></div><div><p className="text-xs font-semibold text-neutral-500">État / anomalies</p><p className="mt-1 whitespace-pre-wrap text-sm">{product.condition_notes||"Aucune note"}</p></div></div>
           <div className="mt-6 rounded-2xl border border-neutral-200 p-4"><p className="font-semibold">Statut publication</p><p className="mt-1 text-sm text-neutral-500">{product.publication_approved_at?"✓ Validation finale enregistrée":"En attente de validation finale"}</p></div>
-          {["owner","main_admin"].includes(role)&&<><label className="mt-5 block text-sm font-medium">Note interne (optionnel)<textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} className="mt-2 w-full rounded-xl border px-3 py-3"/></label><button onClick={approve} disabled={!ready||saving} className="mt-3 w-full rounded-xl bg-[#ff5722] px-4 py-3 font-semibold text-white disabled:opacity-40">{saving?"Validation...":product.publication_approved_at?"Revalider":"Valider pour Shopify"}</button><p className="mt-2 text-xs text-neutral-400">{ready?"Cette action ne publie pas encore sur Shopify. Elle autorise l'étape de synchronisation.":"Le produit doit être complet, en statut ready_for_publication et avoir un prix confirmé."}</p></>}
+          {["owner","main_admin"].includes(role)&&<><label className="mt-5 block text-sm font-medium">Note interne (optionnel)<textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} className="mt-2 w-full rounded-xl border px-3 py-3"/></label><button onClick={approve} disabled={!ready||saving} className="mt-3 w-full rounded-xl bg-[#ff5722] px-4 py-3 font-semibold text-white disabled:opacity-40">{saving?"Validation...":product.publication_approved_at?"Revalider":"Valider pour Shopify"}</button>{product.publication_approved_at&&<button onClick={publishToShopify} disabled={!ready||shopifyPublishing||product.status==="published"} className="mt-3 w-full rounded-xl bg-green-600 px-4 py-3 font-semibold text-white disabled:opacity-40">{shopifyPublishing?"Synchronisation...":product.status==="published"?"✓ Publié sur Shopify":"🚀 Publier sur Shopify"}</button>}<p className="mt-2 text-xs text-neutral-400">{ready?"Validation et synchronisation Shopify sont séparées.":"Le produit doit être complet, en statut ready_for_publication et avoir un prix confirmé."}</p></>}
         </section>
       </div>}
     </div>
