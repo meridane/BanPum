@@ -1,8 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/browser";
 
 type Props = {
   fullName: string;
@@ -10,85 +6,85 @@ type Props = {
   counts: { reception: number; products: number; orders: number; returns: number };
 };
 
-const cards = [
-  { key: "reception", title: "Réception", subtitle: "Lots à traiter", href: "/admin/reception" },
-  { key: "products", title: "Produits", subtitle: "En stock", href: "/admin/products" },
-  { key: "orders", title: "Commandes", subtitle: "À préparer", href: "/admin/orders" },
-  { key: "returns", title: "Retours", subtitle: "À traiter", href: "/admin/returns" },
+const stats = [
+  { key: "reception", label: "Réceptions", note: "Lots à traiter", href: "/admin/reception", icon: "↓" },
+  { key: "products", label: "Produits en stock", note: "Disponibles / publiés", href: "/admin/products", icon: "□" },
+  { key: "orders", label: "Commandes", note: "À préparer", href: "/admin/orders", icon: "≡" },
+  { key: "returns", label: "Retours", note: "À traiter", href: "/admin/returns", icon: "↩" },
 ] as const;
 
+const actions = [
+  { title: "Nouvel arrivage", text: "Créer un lot et commencer la réception.", href: "/admin/reception", accent: true, icon: "↓" },
+  { title: "Scanner un produit", text: "Identifier un produit ou une position.", href: "/admin/stock/scanner", accent: false, icon: "⌗" },
+  { title: "Ajouter un produit", text: "Créer une fiche produit complète.", href: "/admin/products/new", accent: false, icon: "+" },
+  { title: "Publier sur Shopify", text: "Vérifier et publier les produits prêts.", href: "/admin/products/publication", accent: false, icon: "↗" },
+];
+
 export default function AdminDashboard({ fullName, role, counts }: Props) {
-  const router = useRouter();
-
-  async function signOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.replace("/admin/login");
-    router.refresh();
-  }
-
   return (
-    <main className="min-h-screen bg-[#f7f7f5]">
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/admin" className="block">
-            <p className="text-xs font-bold tracking-[0.2em] text-[#ff5722]">BANPUM</p>
-            <p className="text-lg font-bold text-neutral-900">Operations Admin</p>
-          </Link>
-          <button onClick={signOut} className="rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
-            Déconnexion
-          </button>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <section className="rounded-3xl bg-neutral-900 p-6 text-white sm:p-8">
-          <p className="text-sm text-neutral-300">Bienvenue</p>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{fullName}</h1>
-          <div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-200">
-            {role}
+    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <section className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-sm sm:p-8">
+        <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#ff5722]/20 blur-3xl" />
+        <div className="relative">
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#ff8a65]">Operations overview</p>
+              <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Bonjour, {fullName}</h1>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">Voici l’état opérationnel de BanPum. Accédez rapidement aux tâches qui nécessitent votre attention.</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+              <div className="text-[10px] uppercase tracking-wider text-slate-400">Rôle</div>
+              <div className="mt-1 text-sm font-bold capitalize text-white">{role.replace("_"," ")}</div>
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((card) => (
-            <Link
-              key={card.key}
-              href={card.href}
-              className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <p className="text-sm font-medium text-neutral-500">{card.title}</p>
-              <p className="mt-2 text-3xl font-bold text-neutral-900">{counts[card.key]}</p>
-              <p className="mt-1 text-xs text-neutral-400">{card.subtitle}</p>
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map(card => (
+          <Link key={card.key} href={card.href} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-lg font-bold text-[#ff5722]">{card.icon}</span>
+              <span className="text-slate-300 transition group-hover:text-[#ff5722]">↗</span>
+            </div>
+            <div className="mt-5 text-3xl font-bold tracking-tight text-slate-950">{counts[card.key]}</div>
+            <div className="mt-1 text-sm font-semibold text-slate-700">{card.label}</div>
+            <div className="mt-1 text-xs text-slate-400">{card.note}</div>
+          </Link>
+        ))}
+      </section>
+
+      <section className="mt-8">
+        <div className="mb-4 flex items-end justify-between">
+          <div><h2 className="text-lg font-bold text-slate-950">Actions rapides</h2><p className="mt-1 text-sm text-slate-400">Les opérations les plus utilisées.</p></div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {actions.map(action => (
+            <Link key={action.href} href={action.href} className={"rounded-2xl border p-5 transition hover:-translate-y-0.5 hover:shadow-md " + (action.accent ? "border-[#ff5722] bg-[#ff5722] text-white" : "border-slate-200 bg-white text-slate-900")}>
+              <span className={"grid h-10 w-10 place-items-center rounded-xl text-lg font-bold " + (action.accent ? "bg-white/15 text-white" : "bg-slate-100 text-slate-700")}>{action.icon}</span>
+              <h3 className="mt-5 font-bold">{action.title}</h3>
+              <p className={"mt-2 text-sm leading-5 " + (action.accent ? "text-white/75" : "text-slate-400")}>{action.text}</p>
             </Link>
           ))}
-        </section>
+        </div>
+      </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link href="/admin/stock/locations" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Stock</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Emplacements QR</h2><p className="mt-2 text-sm text-neutral-500">Créer les zones, racks, étagères et places.</p></Link>
-          <Link href="/admin/stock/move" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Stock</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Scanner / Ranger</h2><p className="mt-2 text-sm text-neutral-500">Produit QR → emplacement QR.</p></Link>
-          <Link href="/admin/products" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Catalogue interne</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Produits</h2><p className="mt-2 text-sm text-neutral-500">Contrôle, photos et statut.</p></Link>
-          <Link href="/admin/products/price" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Validation</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Prix officiels</h2><p className="mt-2 text-sm text-neutral-500">Confirmer les propositions avant publication.</p></Link>
-          <Link href="/admin/reception" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Entrées</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Réception</h2><p className="mt-2 text-sm text-neutral-500">Lots et produits reçus.</p></Link>
-        </section>
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Link href="/admin/reception" className="rounded-2xl bg-[#ff5722] p-6 text-white shadow-sm transition hover:bg-[#e64a19]">
-            <p className="text-sm font-medium text-white/80">Opérations</p>
-            <h2 className="mt-1 text-xl font-bold">Nouvel arrivage</h2>
-            <p className="mt-2 text-sm text-white/80">Créer un lot de réception et commencer l’identification des produits.</p>
-          </Link>
-          <Link href="/admin/stock/scanner" className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50">
-            <p className="text-sm font-medium text-neutral-500">Stock physique</p>
-            <h2 className="mt-1 text-xl font-bold text-neutral-900">Réception → QR → Stock</h2>
-            <p className="mt-2 text-sm text-neutral-500">Scanner produit + emplacement pour ranger physiquement chaque produit.</p>
-          </Link>
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-            <p className="text-sm font-medium text-neutral-500">Système</p>
-            <h2 className="mt-1 text-xl font-bold text-neutral-900">Supabase connecté</h2>
-            <p className="mt-2 text-sm text-neutral-500">Les compteurs affichés viennent maintenant de la base BanPum.</p>
+      <section className="mt-8 grid gap-6 xl:grid-cols-[1.4fr_.8fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between"><div><h2 className="font-bold text-slate-950">Flux opérationnel</h2><p className="mt-1 text-xs text-slate-400">Cycle produit BanPum</p></div><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">Système actif</span></div>
+          <div className="mt-6 grid gap-2 sm:grid-cols-4">
+            {["Réception","Contrôle","Stock","Publication"].map((step,i)=><div key={step} className="rounded-xl bg-slate-50 p-4"><div className="text-xs font-bold text-slate-400">0{i+1}</div><div className="mt-2 text-sm font-bold text-slate-800">{step}</div><div className="mt-3 h-1.5 rounded-full bg-slate-200"><div className={"h-1.5 rounded-full bg-[#ff5722] " + (i===0 ? "w-1/2" : i===1 ? "w-1/3" : "w-1/5")} /></div></div>)}
           </div>
-        </section>
-      </div>
-    </main>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="font-bold text-slate-950">Intégrations</h2>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="text-sm font-semibold text-slate-700">Supabase</span><span className="text-xs font-bold text-emerald-600">● Connecté</span></div>
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="text-sm font-semibold text-slate-700">Shopify</span><span className="text-xs font-bold text-emerald-600">● Connecté</span></div>
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span className="text-sm font-semibold text-slate-700">QR / Stock</span><span className="text-xs font-bold text-emerald-600">● Actif</span></div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
