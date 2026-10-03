@@ -30,16 +30,19 @@ async function getShopifyAccessToken(): Promise<string> {
   tokenRequest = (async () => {
     const { shop, clientId, clientSecret } = shopifyConfig();
 
-    const res = await fetch(\`https://\${shop}/admin/oauth/access_token\`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: clientId,
-        client_secret: clientSecret,
-      }),
-      cache: "no-store",
-    });
+    const res = await fetch(
+      "https://" + shop + "/admin/oauth/access_token",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: clientId,
+          client_secret: clientSecret,
+        }),
+        cache: "no-store",
+      },
+    );
 
     const json = await res.json();
 
@@ -47,7 +50,7 @@ async function getShopifyAccessToken(): Promise<string> {
       throw new Error(
         json?.error_description ||
           json?.error ||
-          \`Shopify token request failed: HTTP \${res.status}\`,
+          "Shopify token request failed: HTTP " + res.status,
       );
     }
 
@@ -72,21 +75,24 @@ export async function shopifyAdminGraphql<T>(
   const { shop } = shopifyConfig();
   const token = await getShopifyAccessToken();
 
-  const res = await fetch(\`https://\${shop}/admin/api/\${API_VERSION}/graphql.json\`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Access-Token": token,
+  const res = await fetch(
+    "https://" + shop + "/admin/api/" + API_VERSION + "/graphql.json",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": token,
+      },
+      body: JSON.stringify({ query, variables }),
+      cache: "no-store",
     },
-    body: JSON.stringify({ query, variables }),
-    cache: "no-store",
-  });
+  );
 
   const json = await res.json();
 
   if (!res.ok) {
     throw new Error(
-      json?.errors?.[0]?.message || \`Shopify HTTP \${res.status}\`,
+      json?.errors?.[0]?.message || "Shopify HTTP " + res.status,
     );
   }
 
