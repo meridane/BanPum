@@ -64,6 +64,12 @@ export default function AdminDashboard({ fullName, role, counts }: Props) {
           ))}
         </section>
 
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link href="/admin/stock/locations" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Stock</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Emplacements QR</h2><p className="mt-2 text-sm text-neutral-500">Créer les zones, racks, étagères et places.</p></Link>
+          <Link href="/admin/stock/move" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Stock</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Scanner / Ranger</h2><p className="mt-2 text-sm text-neutral-500">Produit QR → emplacement QR.</p></Link>
+          <Link href="/admin/products" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Catalogue interne</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Produits</h2><p className="mt-2 text-sm text-neutral-500">Contrôle, photos et statut.</p></Link>
+          <Link href="/admin/reception" className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 hover:bg-neutral-50"><p className="text-sm font-medium text-neutral-500">Entrées</p><h2 className="mt-1 text-lg font-bold text-neutral-900">Réception</h2><p className="mt-2 text-sm text-neutral-500">Lots et produits reçus.</p></Link>
+        </section>
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Link href="/admin/reception" className="rounded-2xl bg-[#ff5722] p-6 text-white shadow-sm transition hover:bg-[#e64a19]">
             <p className="text-sm font-medium text-white/80">Opérations</p>
