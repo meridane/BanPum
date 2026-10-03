@@ -32,6 +32,8 @@ export default function AdminNavbar() {
   const [open, setOpen] = useState<string | null>(null);
   const [name, setName] = useState("");
 
+  if (pathname === "/admin/login" || pathname === "/admin/change-password") return null;
+
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
