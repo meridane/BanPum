@@ -14,7 +14,7 @@ export function shopifyConfig() {
   }
 
   return {
-    shop: shop.replace(/^https?:\\/\\//, "").replace(/\\/$/, ""),
+    shop: shop.replace(/^https?:\/\//, "").replace(/\/$/, ""),
     clientId,
     clientSecret,
   };
@@ -30,7 +30,7 @@ async function getShopifyAccessToken(): Promise<string> {
   tokenRequest = (async () => {
     const { shop, clientId, clientSecret } = shopifyConfig();
 
-    const res = await fetch(`https://${shop}/admin/oauth/access_token`, {
+    const res = await fetch(\`https://\${shop}/admin/oauth/access_token\`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -47,7 +47,7 @@ async function getShopifyAccessToken(): Promise<string> {
       throw new Error(
         json?.error_description ||
           json?.error ||
-          `Shopify token request failed: HTTP ${res.status}`,
+          \`Shopify token request failed: HTTP \${res.status}\`,
       );
     }
 
@@ -72,7 +72,7 @@ export async function shopifyAdminGraphql<T>(
   const { shop } = shopifyConfig();
   const token = await getShopifyAccessToken();
 
-  const res = await fetch(`https://${shop}/admin/api/${API_VERSION}/graphql.json`, {
+  const res = await fetch(\`https://\${shop}/admin/api/\${API_VERSION}/graphql.json\`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -86,7 +86,7 @@ export async function shopifyAdminGraphql<T>(
 
   if (!res.ok) {
     throw new Error(
-      json?.errors?.[0]?.message || `Shopify HTTP ${res.status}`,
+      json?.errors?.[0]?.message || \`Shopify HTTP \${res.status}\`,
     );
   }
 
