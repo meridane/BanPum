@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/browser";
 type Product = {
   id: string; internal_ref: string; qr_code: string; name: string | null; brand: string | null;
   model: string | null; category: string | null; description: string | null;
-  condition_notes: string | null; status: string; official_price: number | null; ai_data?: AIData | null;
+  condition_notes: string | null; status: string; official_price: number | null; proposed_price: number | null; price_status: "not_set" | "pending" | "confirmed" | "rejected"; price_rejection_reason: string | null; ai_data?: AIData | null;
 };
 type Check = { id: string; general_condition: string | null; functional: boolean | null; packaging: string | null; accessories: string | null; anomalies: string | null; observations: string | null; completed_at: string | null };
 type Location = { id: string; location_code: string; name: string; level_type: string; status: string };
@@ -42,13 +42,17 @@ export default function ProductDetailPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [role, setRole] = useState("");
+  const [proposedPrice, setProposedPrice] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
 
   async function load() {
     const { data: p } = await supabase.from("physical_products")
-      .select("id,internal_ref,qr_code,name,brand,model,category,description,condition_notes,status,official_price,ai_data")
+      .select("id,internal_ref,qr_code,name,brand,model,category,description,condition_notes,status,official_price,proposed_price,price_status,price_rejection_reason,location_id,ai_data")
       .eq("id", params.id).single();
     setProduct(p as Product);
     if ((p as Product | null)?.ai_data) setAi((p as Product).ai_data as AIData);
+    if ((p as Product | null)?.proposed_price != null) setProposedPrice(String((p as Product).proposed_price));
 
     const { data: c } = await supabase.from("product_checks")
       .select("id,general_condition,functional,packaging,accessories,anomalies,observations,completed_at")
@@ -70,7 +74,15 @@ export default function ProductDetailPage() {
     setPhotos((ph ?? []) as typeof photos);
   }
 
-  useEffect(() => { load(); }, [params.id]);
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", u.user.id).maybeSingle();
+      setRole(profile?.role || "");
+    })();
+    load();
+  }, [params.id]);
 
   async function saveCheck() {
     setSaving(true); setError(""); setMessage("");
@@ -120,6 +132,96 @@ export default function ProductDetailPage() {
     setMessage("Analyse IA terminée. Vérifie les propositions avant de les appliquer.");
     setAiLoading(false);
     load();
+  }
+
+  async function savePriceProposal() {
+    const value = Number(proposedPrice.replace(/\s/g, "").replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0) { setError("Entre un prix supérieur à 0 ₩."); return; }
+    setSaving(true); setError(""); setMessage("");
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { setError("Session expirée."); setSaving(false); return; }
+    const old = product;
+    const { error: e } = await supabase.from("physical_products").update({
+      proposed_price: value,
+      price_status: "pending",
+      price_proposed_by: u.user.id,
+      price_proposed_at: new Date().toISOString(),
+      price_rejection_reason: null,
+      price_rejected_by: null,
+      price_rejected_at: null,
+    }).eq("id", params.id);
+    if (e) { setError(e.message); setSaving(false); return; }
+    await supabase.from("audit_logs").insert({
+      actor_user_id: u.user.id,
+      action: "price_proposed",
+      object_type: "physical_product",
+      object_id: params.id,
+      old_data: { official_price: old?.official_price, proposed_price: old?.proposed_price, price_status: old?.price_status },
+      new_data: { proposed_price: value, price_status: "pending" },
+      result: "success",
+      context: { source: "product_detail" },
+    });
+    setMessage("Prix proposé. Il doit maintenant être confirmé par le propriétaire ou le Main Admin.");
+    await load();
+    setSaving(false);
+  }
+
+  async function confirmPrice() {
+    if (!product?.proposed_price || !["owner", "main_admin"].includes(role)) return;
+    setSaving(true); setError(""); setMessage("");
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { setError("Session expirée."); setSaving(false); return; }
+    const nextStatus = product.location_id && product.name && product.category && product.description ? "in_stock" : "controlled";
+    const { error: e } = await supabase.from("physical_products").update({
+      official_price: product.proposed_price,
+      price_status: "confirmed",
+      price_confirmed_by: u.user.id,
+      price_confirmed_at: new Date().toISOString(),
+      price_rejection_reason: null,
+      status: nextStatus,
+    }).eq("id", params.id);
+    if (e) { setError(e.message); setSaving(false); return; }
+    await supabase.from("audit_logs").insert({
+      actor_user_id: u.user.id,
+      action: "price_confirmed",
+      object_type: "physical_product",
+      object_id: params.id,
+      old_data: { official_price: product.official_price, proposed_price: product.proposed_price, price_status: product.price_status },
+      new_data: { official_price: product.proposed_price, price_status: "confirmed", status: nextStatus },
+      result: "success",
+      context: { source: "product_detail" },
+    });
+    setMessage(nextStatus === "in_stock" ? "Prix confirmé. Produit prêt en stock." : "Prix confirmé. Il reste des informations/emplacement à compléter.");
+    await load();
+    setSaving(false);
+  }
+
+  async function rejectPrice() {
+    if (!product?.proposed_price || !["owner", "main_admin"].includes(role)) return;
+    if (!rejectionReason.trim()) { setError("Indique la raison du refus."); return; }
+    setSaving(true); setError(""); setMessage("");
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { setError("Session expirée."); setSaving(false); return; }
+    const { error: e } = await supabase.from("physical_products").update({
+      price_status: "rejected",
+      price_rejection_reason: rejectionReason.trim(),
+      price_rejected_by: u.user.id,
+      price_rejected_at: new Date().toISOString(),
+    }).eq("id", params.id);
+    if (e) { setError(e.message); setSaving(false); return; }
+    await supabase.from("audit_logs").insert({
+      actor_user_id: u.user.id,
+      action: "price_rejected",
+      object_type: "physical_product",
+      object_id: params.id,
+      old_data: { proposed_price: product.proposed_price, price_status: product.price_status },
+      new_data: { price_status: "rejected", reason: rejectionReason.trim() },
+      result: "success",
+      context: { source: "product_detail" },
+    });
+    setMessage("Prix refusé. L'employé peut proposer un nouveau montant.");
+    await load();
+    setSaving(false);
   }
 
   async function applyAI() {
@@ -175,6 +277,33 @@ export default function ProductDetailPage() {
                   {ai.warnings?.length ? <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800"><b>À vérifier :</b> {ai.warnings.join(" · ")}</div> : null}
                 </div>
               )}
+            </section>
+
+            <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+              <p className="text-xs font-bold tracking-wide text-[#ff5722]">PRIX OFFICIEL</p>
+              <div className="mt-4 rounded-2xl bg-neutral-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><p className="text-xs text-neutral-500">Prix officiel</p><p className="text-2xl font-bold">{product.official_price != null ? product.official_price.toLocaleString("ko-KR") + " ₩" : "Non défini"}</p></div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold ring-1 ring-black/5">{product.price_status}</span>
+                </div>
+                {product.proposed_price != null && <p className="mt-3 text-sm">Proposition : <b>{product.proposed_price.toLocaleString("ko-KR")} ₩</b></p>}
+                {product.price_rejection_reason && <p className="mt-2 rounded-xl bg-red-50 p-3 text-sm text-red-700">Refus : {product.price_rejection_reason}</p>}
+              </div>
+              <label className="mt-4 block text-sm font-medium">Montant proposé (₩)
+                <input inputMode="numeric" value={proposedPrice} onChange={e=>setProposedPrice(e.target.value)} placeholder="ex. 59000" className="mt-2 w-full rounded-xl border px-4 py-3"/>
+              </label>
+              <button onClick={savePriceProposal} disabled={saving} className="mt-3 w-full rounded-xl border border-neutral-300 px-4 py-3 font-semibold disabled:opacity-60">Proposer ce prix</button>
+              {["owner","main_admin"].includes(role) && product.price_status === "pending" && product.proposed_price != null && (
+                <div className="mt-4 space-y-3 rounded-2xl border border-[#ff5722]/20 bg-[#fff7f3] p-4">
+                  <p className="text-sm font-bold">Validation requise</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={confirmPrice} disabled={saving} className="rounded-xl bg-[#ff5722] px-3 py-3 text-sm font-semibold text-white disabled:opacity-60">✓ Confirmer</button>
+                    <button onClick={rejectPrice} disabled={saving} className="rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm font-semibold disabled:opacity-60">Refuser</button>
+                  </div>
+                  <input value={rejectionReason} onChange={e=>setRejectionReason(e.target.value)} placeholder="Raison si refus" className="w-full rounded-xl border bg-white px-3 py-3 text-sm"/>
+                </div>
+              )}
+              <p className="mt-2 text-xs text-neutral-400">Un employé propose. Owner/Main Admin confirme. Aucun prix officiel n'est publié automatiquement.</p>
             </section>
 
             <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
