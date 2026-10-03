@@ -38,7 +38,7 @@ export default function ProductsPage() {
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div><Link href="/admin" className="text-xs font-bold tracking-[0.2em] text-[#ff5722]">BANPUM</Link><h1 className="text-lg font-bold">Produits</h1></div>
-          <div className="flex gap-2"><Link href="/admin/products/new" className="rounded-xl bg-[#ff5722] px-4 py-2 text-sm font-semibold text-white">Nouveau</Link><Link href="/admin" className="rounded-xl border border-neutral-200 px-4 py-2 text-sm">Dashboard</Link></div>
+          <div className="flex gap-2"><Link href="/admin/products/price" className="rounded-xl border border-[#ff5722]/30 bg-[#fff7f3] px-4 py-2 text-sm font-semibold text-[#ff5722]">Prix à confirmer</Link><Link href="/admin/products/new" className="rounded-xl bg-[#ff5722] px-4 py-2 text-sm font-semibold text-white">Nouveau</Link><Link href="/admin" className="rounded-xl border border-neutral-200 px-4 py-2 text-sm">Dashboard</Link></div>
         </div>
       </header>
       <div className="mx-auto max-w-7xl px-4 py-8">
