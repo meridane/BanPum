@@ -32,8 +32,6 @@ export default function AdminNavbar() {
   const [open, setOpen] = useState<string | null>(null);
   const [name, setName] = useState("");
 
-  if (pathname === "/admin/login" || pathname === "/admin/change-password") return null;
-
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
@@ -56,6 +54,8 @@ export default function AdminNavbar() {
 
   const isGroupActive = (items: { href: string }[]) =>
     items.some(item => pathname === item.href || pathname.startsWith(item.href + "/"));
+
+  if (pathname === "/admin/login" || pathname === "/admin/change-password") return null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur">
