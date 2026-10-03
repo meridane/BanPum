@@ -166,6 +166,42 @@ export default function ProductDetailPage() {
     setSaving(false);
   }
 
+  async function setOfficialPriceDirect() {
+    const value = Number(proposedPrice.replace(/\s/g, "").replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0) { setError("Entre un prix supérieur à 0 ₩."); return; }
+    if (!["owner", "main_admin"].includes(role)) return;
+    setSaving(true); setError(""); setMessage("");
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { setError("Session expirée."); setSaving(false); return; }
+    const old = product;
+    const nextStatus = product?.location_id && product?.name && product?.category && product?.description ? "in_stock" : "controlled";
+    const { error: e } = await supabase.from("physical_products").update({
+      official_price: value,
+      proposed_price: value,
+      price_status: "confirmed",
+      price_confirmed_by: u.user.id,
+      price_confirmed_at: new Date().toISOString(),
+      price_rejection_reason: null,
+      price_rejected_by: null,
+      price_rejected_at: null,
+      status: nextStatus,
+    }).eq("id", params.id);
+    if (e) { setError(e.message); setSaving(false); return; }
+    await supabase.from("audit_logs").insert({
+      actor_user_id: u.user.id,
+      action: "price_changed_direct",
+      object_type: "physical_product",
+      object_id: params.id,
+      old_data: { official_price: old?.official_price, price_status: old?.price_status },
+      new_data: { official_price: value, price_status: "confirmed", status: nextStatus },
+      result: "success",
+      context: { source: "product_detail", direct_owner_change: true },
+    });
+    setMessage("Prix officiel enregistré directement et historisé.");
+    await load();
+    setSaving(false);
+  }
+
   async function confirmPrice() {
     if (!product?.proposed_price || !["owner", "main_admin"].includes(role)) return;
     setSaving(true); setError(""); setMessage("");
@@ -293,6 +329,9 @@ export default function ProductDetailPage() {
                 <input inputMode="numeric" value={proposedPrice} onChange={e=>setProposedPrice(e.target.value)} placeholder="ex. 59000" className="mt-2 w-full rounded-xl border px-4 py-3"/>
               </label>
               <button onClick={savePriceProposal} disabled={saving} className="mt-3 w-full rounded-xl border border-neutral-300 px-4 py-3 font-semibold disabled:opacity-60">Proposer ce prix</button>
+              {["owner","main_admin"].includes(role) && (
+                <button onClick={setOfficialPriceDirect} disabled={saving} className="mt-2 w-full rounded-xl bg-neutral-900 px-4 py-3 font-semibold text-white disabled:opacity-60">Définir directement comme prix officiel</button>
+              )}
               {["owner","main_admin"].includes(role) && product.price_status === "pending" && product.proposed_price != null && (
                 <div className="mt-4 space-y-3 rounded-2xl border border-[#ff5722]/20 bg-[#fff7f3] p-4">
                   <p className="text-sm font-bold">Validation requise</p>
