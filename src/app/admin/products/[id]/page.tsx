@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/browser";
 type Product = {
   id: string; internal_ref: string; qr_code: string; name: string | null; brand: string | null;
   model: string | null; category: string | null; description: string | null;
-  condition_notes: string | null; status: string; official_price: number | null; proposed_price: number | null; price_status: "not_set" | "pending" | "confirmed" | "rejected"; price_rejection_reason: string | null; ai_data?: AIData | null;
+  condition_notes: string | null; status: string; official_price: number | null; proposed_price: number | null; location_id: string | null; price_status: "not_set" | "pending" | "confirmed" | "rejected"; price_rejection_reason: string | null; ai_data?: AIData | null;
 };
 type Check = { id: string; general_condition: string | null; functional: boolean | null; packaging: string | null; accessories: string | null; anomalies: string | null; observations: string | null; completed_at: string | null };
 type Location = { id: string; location_code: string; name: string; level_type: string; status: string };
