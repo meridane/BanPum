@@ -20,9 +20,9 @@ const groups = [
     { label: "Publication Shopify", href: "/admin/products/publication", icon: "↗" },
   ]},
   { title: "Commerce", items: [
-    { label: "Commandes", href: "/admin/orders", icon: "≡" },
-    { label: "Retours", href: "/admin/returns", icon: "↩" },
-    { label: "Finance", href: "/admin/finance", icon: "₩" },
+    { label: "Commandes", href: "", icon: "≡", soon: true },
+    { label: "Retours", href: "", icon: "↩", soon: true },
+    { label: "Finance", href: "", icon: "₩", soon: true },
   ]},
 ];
 
@@ -75,10 +75,18 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               {group.items.map(item => {
                 const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href + "/"));
                 return (
+                  item.soon ? (
+                    <div key={item.label} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-400">
+                      <span className="grid h-7 w-7 place-items-center rounded-lg text-sm text-slate-300">{item.icon}</span>
+                      <span>{item.label}</span>
+                      <span className="ml-auto text-[9px] font-bold uppercase tracking-wider">bientôt</span>
+                    </div>
+                  ) : (
                   <Link key={item.href} href={item.href} className={"flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition " + (active ? "bg-[#fff1eb] text-[#e64a19]" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950")}>
                     <span className={"grid h-7 w-7 place-items-center rounded-lg text-sm " + (active ? "bg-white text-[#ff5722] shadow-sm" : "text-slate-400")}>{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>
+                  )
                 );
               })}
             </div>
