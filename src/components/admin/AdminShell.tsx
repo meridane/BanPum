@@ -6,21 +6,29 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 
 const groups = [
-  { title: "Workspace", items: [{ label: "Dashboard", href: "/admin", icon: "⌂" }] },
-  { title: "Opérations", items: [
-    { label: "Réception", href: "/admin/reception", icon: "↓" },
+  { title: "Centre de contrôle", items: [{ label: "Dashboard", href: "/admin", icon: "⌂" }] },
+  { title: "1 · Arrivages", items: [
+    { label: "Arrivages", href: "/admin/reception", icon: "↓" },
+  ]},
+  { title: "2 · Contrôle & Produits", items: [
+    { label: "Contrôle / Catalogue", href: "/admin/products", icon: "□" },
+    { label: "Nouveau produit", href: "/admin/products/new", icon: "+" },
+    { label: "Prix à confirmer", href: "/admin/products/price", icon: "₩" },
+  ]},
+  { title: "3 · Stock", items: [
+    { label: "Stock & inventaire", href: "/admin/products", icon: "▦" },
     { label: "Scanner QR", href: "/admin/stock/scanner", icon: "⌗" },
     { label: "Emplacements", href: "/admin/stock/locations", icon: "▦" },
     { label: "Ranger", href: "/admin/stock/move", icon: "⇄" },
   ]},
-  { title: "Catalogue", items: [
-    { label: "Produits", href: "/admin/products", icon: "□" },
-    { label: "Nouveau produit", href: "/admin/products/new", icon: "+" },
-    { label: "Prix à confirmer", href: "/admin/products/price", icon: "₩" },
-    { label: "Publication Shopify", href: "/admin/products/publication", icon: "↗" },
+  { title: "4 · Publication", items: [
+    { label: "À publier / Shopify", href: "/admin/products/publication", icon: "↗" },
   ]},
-  { title: "Commerce", items: [
+  { title: "5 · Ventes", items: [
     { label: "Commandes", href: "", icon: "≡", soon: true },
+    { label: "Préparation / Expédition", href: "", icon: "□", soon: true },
+  ]},
+  { title: "6 · Après-vente", items: [
     { label: "Retours", href: "", icon: "↩", soon: true },
     { label: "Finance", href: "", icon: "₩", soon: true },
   ]},
