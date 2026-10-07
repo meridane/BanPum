@@ -126,8 +126,12 @@ export default function ProductDetailPage() {
     const hasLabel = photos.some(p => p.photo_type === "label");
     if (!hasLabel) { setError("Ajoute d'abord une photo de l'étiquette/référence."); setAiLoading(false); return; }
     const res = await fetch("/api/admin/products/" + params.id + "/ai", { method: "POST" });
-    const data = await res.json();
-    if (!res.ok) { setError(data.error || "Analyse IA impossible."); setAiLoading(false); return; }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error || "Analyse IA impossible. Vérifie les logs serveur et la configuration OpenAI.");
+      setAiLoading(false);
+      return;
+    }
     setAi(data.aiData as AIData);
     setMessage("Analyse IA terminée. Vérifie les propositions avant de les appliquer.");
     setAiLoading(false);
