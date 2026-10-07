@@ -98,12 +98,22 @@ Ne donne pas de prix si tu ne peux pas vérifier la source. Les suggestions de p
     });
 
     const raw = response.output_text?.trim() ?? "";
-    const cleaned = raw.replace(/^\`\`\`json\s*/i, "").replace(/\s*\`\`\`$/, "");
+    const cleaned = raw.trim().replace(/^```(?:json)?\\s*/i, "").replace(/\\s*```$/i, "").trim();
     let aiData: unknown;
     try {
       aiData = JSON.parse(cleaned);
     } catch {
-      return NextResponse.json({ error: "L'IA a renvoyé une réponse non structurée.", raw }, { status: 502 });
+      const start = cleaned.indexOf("{");
+      const end = cleaned.lastIndexOf("}");
+      if (start >= 0 && end > start) {
+        try {
+          aiData = JSON.parse(cleaned.slice(start, end + 1));
+        } catch {
+          return NextResponse.json({ error: "AI JSON invalide.", raw: cleaned.slice(0, 4000) }, { status: 502 });
+        }
+      } else {
+        return NextResponse.json({ error: "AI result exploitable manquant.", raw: cleaned.slice(0, 4000) }, { status: 502 });
+      }
     }
 
     await supabase
